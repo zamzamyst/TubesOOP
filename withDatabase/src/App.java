@@ -10,7 +10,7 @@ public class App {
     public static void main(String[] args) {  
         Scanner scanner = new Scanner(System.in);  
         while (true) {  
-            System.out.println("\nMenu:");  
+            System.out.println("\nMenu Parkir Universitas:");  
             System.out.println("1. Tambah Kendaraan");  
             System.out.println("2. Tampilkan Kendaraan");  
             System.out.println("3. Update Kendaraan");  
@@ -77,15 +77,24 @@ public class App {
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {  
             String sql = "SELECT * FROM data_kendaraan";  
             try (Statement statement = connection.createStatement();  
-                 ResultSet resultSet = statement.executeQuery(sql)) {  
-                System.out.println("\nDaftar Kendaraan:");  
+                ResultSet resultSet = statement.executeQuery(sql)) {  
+    
+                // Menampilkan header tabel  
+                System.out.printf("\n| %-20s | %-20s | %-20s | %-20s |\n", "Nomor Kendaraan", "Jenis Kendaraan", "Nama Pemilik", "Kategori Pemilik");  
+                System.out.println("---------------------------------------------------------------" +  
+                                "------------------------------------------------");  
+    
+                // Menampilkan data kendaraan  
                 while (resultSet.next()) {  
                     String nomorKendaraan = resultSet.getString("nomor_kendaraan");  
                     String jenisKendaraan = resultSet.getString("jenis_kendaraan");  
                     String namaPemilik = resultSet.getString("nama_pemilik");  
                     String kategoriPemilik = resultSet.getString("kategori_pemilik");  
-                    System.out.println(nomorKendaraan + ", " + jenisKendaraan + ", " + namaPemilik + ", " + kategoriPemilik);  
+    
+                    System.out.printf("| %-20s | %-20s | %-20s | %-20s |\n", nomorKendaraan, jenisKendaraan, namaPemilik, kategoriPemilik);  
                 }  
+                System.out.println("---------------------------------------------------------------" +  
+                                "------------------------------------------------");  
             }  
         } catch (SQLException e) {  
             e.printStackTrace();  
