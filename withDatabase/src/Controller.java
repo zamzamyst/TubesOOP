@@ -128,49 +128,58 @@ private <T> void setCenterAlignment(TableColumn<Kendaraan, T> column) {
 // -------------------------------------------------------------------------------------------//
 
 // -------------------------------------------------------------------------------------------//
-    private void saveKendaraan() {
-        
-        if (choiceJenisKendaraan.getValue() == null || choiceJenisKendaraan.getValue().isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Peringatan");
-            alert.setHeaderText("Input Tidak Valid");
-            alert.setContentText("Silakan pilih jenis kendaraan terlebih dahulu!");
-            alert.showAndWait();
-            return;
-            }
-
-        if (choiceKategoriPemilik.getValue() == null || choiceKategoriPemilik.getValue().isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Peringatan");
-            alert.setHeaderText("Input Tidak Valid");
-            alert.setContentText("Silakan pilih kategori pemilik terlebih dahulu!");
-            alert.showAndWait();
-            return;
-            }
-
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
-            String sql = "INSERT INTO data_kendaraan (nomor_kendaraan, jenis_kendaraan, nama_pemilik, kategori_pemilik) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, txtNomorKendaraan.getText());
-                statement.setString(2, choiceJenisKendaraan.getValue()); // Ambil nilai dari ChoiceBox
-                statement.setString(3, txtNamaPemilik.getText());
-                statement.setString(4, choiceKategoriPemilik.getValue());
-    
-                int rowsInserted = statement.executeUpdate();
-                if (rowsInserted > 0) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Peringatan");
-                    alert.setHeaderText("Success!");
-                    alert.setContentText("Data berhasil disimpan ke Database.");
-                    alert.showAndWait();
-                    return;
-                        
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+private void saveKendaraan() {
+    if (choiceJenisKendaraan.getValue() == null || choiceJenisKendaraan.getValue().isEmpty()) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Peringatan");
+        alert.setHeaderText("Input Tidak Valid");
+        alert.setContentText("Silakan pilih jenis kendaraan terlebih dahulu!");
+        alert.showAndWait();
+        return;
     }
+
+    if (choiceKategoriPemilik.getValue() == null || choiceKategoriPemilik.getValue().isEmpty()) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Peringatan");
+        alert.setHeaderText("Input Tidak Valid");
+        alert.setContentText("Silakan pilih kategori pemilik terlebih dahulu!");
+        alert.showAndWait();
+        return;
+    }
+
+    try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
+        String sql = "INSERT INTO data_kendaraan (nomor_kendaraan, jenis_kendaraan, nama_pemilik, kategori_pemilik) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, txtNomorKendaraan.getText());
+            statement.setString(2, choiceJenisKendaraan.getValue()); // Ambil nilai dari ChoiceBox
+            statement.setString(3, txtNamaPemilik.getText());
+            statement.setString(4, choiceKategoriPemilik.getValue());
+
+            int rowsInserted = statement.executeUpdate();
+            if (rowsInserted > 0) {
+                // Setelah data disimpan, pindahkan kendaraan ke kategori parkir
+                KendaraanImpl kendaraan = new KendaraanImpl(
+                    0, // ID akan dihasilkan oleh database
+                    txtNomorKendaraan.getText(),
+                    choiceJenisKendaraan.getValue(),
+                    txtNamaPemilik.getText(),
+                    choiceKategoriPemilik.getValue()
+                );
+                kendaraan.simpanKeDatabase(); // Pindahkan ke tabel parkir sesuai kategori pemilik
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Sukses");
+                alert.setHeaderText("Data berhasil disimpan");
+                alert.setContentText("Data kendaraan berhasil disimpan ke database.");
+                alert.showAndWait();
+            }
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+        showAlert("Error", "Gagal menyimpan data kendaraan", Alert.AlertType.ERROR);
+    }
+}
+
 // -------------------------------------------------------------------------------------------//
 
     
@@ -180,13 +189,13 @@ private <T> void setCenterAlignment(TableColumn<Kendaraan, T> column) {
         kendaraanList.clear(); // Kosongkan data sebelum menampilkan yang baru
 
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
-            String sql = "SELECT * FROM kendaraan";
+            String sql = "SELECT * FROM data_kendaraan";
             try (Statement statement = connection.createStatement();
                 ResultSet resultSet = statement.executeQuery(sql)) {
     
                 while (resultSet.next()) {
                     // Buat objek Kendaraan dari setiap baris di ResultSet
-                    Kendaraan kendaraan = new Kendaraan(
+                    Kendaraan kendaraan = new KendaraanImpl(
                             resultSet.getInt("id"), // Ambil ID dari database
                             resultSet.getString("nomor_kendaraan"),
                             resultSet.getString("jenis_kendaraan"),
@@ -265,4 +274,3 @@ private <T> void setCenterAlignment(TableColumn<Kendaraan, T> column) {
         }  
     }  
 }
-

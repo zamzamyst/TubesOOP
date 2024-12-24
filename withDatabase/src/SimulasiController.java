@@ -1,20 +1,21 @@
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import javafx.fxml.FXML;  
 import javafx.fxml.FXMLLoader;  
+import javafx.scene.control.Button;  
+import javafx.scene.control.ChoiceBox;  
+import javafx.scene.control.TextField;  
+import javafx.stage.Stage;  
 import javafx.scene.Parent;  
 import javafx.scene.Scene;  
 import javafx.scene.control.Alert;  
-import javafx.scene.control.Button;  
-import javafx.scene.control.TextField;  
-import javafx.scene.control.ChoiceBox;  
-import javafx.stage.Stage;  
-
-import java.sql.Connection;  
-import java.sql.DriverManager;  
-import java.sql.PreparedStatement;  
-import java.sql.ResultSet;  
-import java.sql.SQLException;  
+import javafx.scene.control.Alert.AlertType;   
+import javafx.scene.Node;  
 
 public class SimulasiController {  
 
@@ -35,254 +36,123 @@ public class SimulasiController {
 
     @FXML  
     private Button btnKeluar;  
-
+    
     @FXML  
     private Button btnPengelola;  
 
     @FXML  
-    private ObservableList<Kendaraan> kendaraanList = FXCollections.observableArrayList();  
+    public void initialize() {  
+        choiceJenisKendaraan.getItems().addAll("Motor", "Mobil");  
+        choiceKategoriPemilik.getItems().addAll("Mahasiswa", "Dosen", "Tamu");  
 
-
-    private static final String URL = "jdbc:mysql://localhost:3306/data_kendaraan"; // Ganti dengan nama database Anda  
-    private static final String USER = "root"; // Ganti dengan username database Anda  
-    private static final String PASSWORD = ""; // Ganti dengan password database Anda  
-
-    @FXML  
-    private void initialize() {  
-        // Menambahkan pilihan di ChoiceBox  
-        choiceJenisKendaraan.getItems().addAll("mobil", "motor");  
-        choiceKategoriPemilik.getItems().addAll("mahasiswa", "dosen", "tamu");  
-
-        // Menetapkan event handler pada tombol  
-        btnMasuk.setOnAction(event -> masukkanKendaraan());  
-        btnKeluar.setOnAction(event -> keluarkanKendaraan());  
-        btnPengelola.setOnAction(event -> openMainPage());   
-
-        initializeParkingSlots(); 
+        btnMasuk.setOnAction(event -> masukParkir());  
+        btnKeluar.setOnAction(event -> hapusData());  
+        btnPengelola.setOnAction(event -> openRegistrationPage());  // Memanggil metode openRegistrationPage  
     }  
 
-    private void initializeParkingSlots() {  
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {  
-            // Menambahkan slot parkir jika belum ada
-            String sql = "INSERT INTO slot_parkir (area, jenis_kendaraan, kapasitas, terisi) " +  
-                         "SELECT 'mahasiswa', 'motor', 10, 0 " +  
-                         "WHERE NOT EXISTS (SELECT 1 FROM slot_parkir WHERE area = 'mahasiswa' AND jenis_kendaraan = 'motor') " +  
-                         "UNION SELECT 'mahasiswa', 'mobil', 15, 0 " +  
-                         "WHERE NOT EXISTS (SELECT 1 FROM slot_parkir WHERE area = 'mahasiswa' AND jenis_kendaraan = 'mobil') " +  
-                         "UNION SELECT 'dosen', 'motor', 5, 0 " +  
-                         "WHERE NOT EXISTS (SELECT 1 FROM slot_parkir WHERE area = 'dosen' AND jenis_kendaraan = 'motor') " +  
-                         "UNION SELECT 'dosen', 'mobil', 8, 0 " +  
-                         "WHERE NOT EXISTS (SELECT 1 FROM slot_parkir WHERE area = 'dosen' AND jenis_kendaraan = 'mobil') " +  
-                         "UNION SELECT 'tamu', 'motor', 5, 0 " +  
-                         "WHERE NOT EXISTS (SELECT 1 FROM slot_parkir WHERE area = 'tamu' AND jenis_kendaraan = 'motor') " +  
-                         "UNION SELECT 'tamu', 'mobil', 7, 0 " +  
-                         "WHERE NOT EXISTS (SELECT 1 FROM slot_parkir WHERE area = 'tamu' AND jenis_kendaraan = 'mobil');";  
-    
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {  
-                statement.executeUpdate();  
-            }  
-        } catch (SQLException e) {  
-            e.printStackTrace();  
-        }  
-    }  
-
-    private void openMainPage() {  
+    private void openRegistrationPage() {  
         try {  
+            // Menggunakan FXMLLoader untuk memuat halaman PageRegistrasi.fxml  
             Parent root = FXMLLoader.load(getClass().getResource("MainPage.fxml"));  
-            Stage stage = (Stage) btnPengelola.getScene().getWindow();  
-            stage.setScene(new Scene(root));  
-            stage.show();  
-        } catch (Exception e) {  
-            e.printStackTrace();  
+            Stage stage = (Stage) txtNomorKendaraan.getScene().getWindow(); // Mendapatkan stage menggunakan salah satu TextField  
+            stage.setScene(new Scene(root)); // Mengatur scene baru  
+            stage.show(); // Menampilkan stage  
+        } catch (IOException e) {  
+            e.printStackTrace(); // Mencetak kesalahan jika terjadi IOException  
         }  
     }  
 
-    private void masukkanKendaraan() {  
-        // Validasi input  
-        if (txtNomorKendaraan.getText().isEmpty() || txtNamaPemilik.getText().isEmpty() ||  
-            choiceJenisKendaraan.getValue() == null || choiceKategoriPemilik.getValue() == null) {  
-            showAlert("Input Tidak Valid", "Silakan lengkapi semua input!", Alert.AlertType.WARNING);  
-            return;  
-        }  
+    private void masukParkir() {
+        String nomorKendaraan = txtNomorKendaraan.getText();
+        String kategoriPemilik = choiceKategoriPemilik.getValue();
+    
+        if (nomorKendaraan == null || nomorKendaraan.isEmpty() || kategoriPemilik == null || kategoriPemilik.isEmpty()) {
+            showAlert("Input Tidak Valid", "Nomor kendaraan dan kategori pemilik harus diisi!");
+            return;
+        }
+    
+        // Cari data kendaraan di tabel pusat berdasarkan nomor kendaraan dan kategori pemilik
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/data_kendaraan", "root", "")) {
+            String sql = "SELECT * FROM data_kendaraan WHERE nomor_kendaraan = ? AND kategori_pemilik = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, nomorKendaraan);
+                statement.setString(2, kategoriPemilik);
+    
+                ResultSet resultSet = statement.executeQuery();
+                if (resultSet.next()) {
+                    String jenisKendaraan = resultSet.getString("jenis_kendaraan");
+                    String namaPemilik = resultSet.getString("nama_pemilik");
+    
+                    Kendaraan kendaraan;
+                    switch (kategoriPemilik) {
+                        case "Mahasiswa":
+                            kendaraan = new MahasiswaParking(resultSet.getInt("id"), nomorKendaraan, jenisKendaraan, namaPemilik);
+                            break;
+                        case "Dosen":
+                            kendaraan = new DosenParking(resultSet.getInt("id"), nomorKendaraan, jenisKendaraan, namaPemilik);
+                            break;
+                        case "Tamu":
+                            kendaraan = new TamuParking(resultSet.getInt("id"), nomorKendaraan, jenisKendaraan, namaPemilik);
+                            break;
+                        default:
+                            showAlert("Error", "Kategori pemilik tidak valid.");
+                            return;
+                    }
+    
+                    // Memanggil metode untuk simpan ke database
+                    kendaraan.simpanKeDatabase();
+                    showAlert("Sukses", "Kendaraan berhasil masuk parkir.");
+                } else {
+                    showAlert("Kendaraan Tidak Terdaftar", "Kendaraan dengan nomor " + nomorKendaraan + " tidak terdaftar.");
+                }
+            }
+        } catch (SQLException e) {
+            showAlert("Error", "Gagal mengakses database: " + e.getMessage());
+        }
+    }
+    
 
-        // Cek ketersediaan slot  
-        String jenisKendaraan = choiceJenisKendaraan.getValue();  
-        String kategoriPemilik = choiceKategoriPemilik.getValue();  
+    private void hapusData() {
+        String nomorKendaraan = txtNomorKendaraan.getText();
+        String kategoriPemilik = choiceKategoriPemilik.getValue();
+    
+        if (nomorKendaraan.isEmpty() || kategoriPemilik == null) {
+            showAlert("Error", "Harap isi nomor kendaraan dan pilih kategori pemilik.");
+            return;
+        }
+    
+        Kendaraan kendaraan;
+        switch (kategoriPemilik) {
+            case "Mahasiswa":
+                kendaraan = new MahasiswaParking(0, nomorKendaraan, "Motor", ""); // Sesuaikan jenis kendaraan dan pemilik
+                break;
+            case "Dosen":
+                kendaraan = new DosenParking(0, nomorKendaraan, "Mobil", ""); // Sesuaikan jenis kendaraan dan pemilik
+                break;
+            case "Tamu":
+                kendaraan = new TamuParking(0, nomorKendaraan, "Motor", ""); // Sesuaikan jenis kendaraan dan pemilik
+                break;
+            default:
+                showAlert("Error", "Kategori pemilik tidak valid.");
+                return;
+        }
+    
+        try {
+            kendaraan.hapusDariDatabase();  // Pemanggilan metode yang melemparkan exception jika ada masalah
+            showAlert("Sukses", "Data kendaraan berhasil dihapus.");
+        } catch (Exception e) {
+            showAlert("Error", e.getMessage());  // Menampilkan pesan error yang dilempar oleh exception
+        }
+    }
+    
+    
 
-        if (!isSlotAvailable(jenisKendaraan, kategoriPemilik)) {  
-            showAlert("Peringatan", "Tidak ada slot tersedia untuk jenis kendaraan dan kategori pemilik ini!", Alert.AlertType.WARNING);  
-            return;  
-        }  
-
-        // Tambahkan kendaraan ke list  
-        Kendaraan kendaraanBaru = new Kendaraan(  
-            kendaraanList.size() + 1, // ID otomatis  
-            txtNomorKendaraan.getText(),  
-            jenisKendaraan,  
-            txtNamaPemilik.getText(),  
-            kategoriPemilik  
-        );  
-
-        kendaraanList.add(kendaraanBaru);  
-        saveKendaraanToDatabase(kendaraanBaru);  
-        updateParkingSlot(kategoriPemilik, jenisKendaraan);  
-
-        // Menampilkan konfirmasi  
-        showAlert("Berhasil", "Kendaraan berhasil dimasukkan!", Alert.AlertType.INFORMATION);  
-
-        // Kosongkan form setelah menambah kendaraan  
-        txtNomorKendaraan.clear();  
-        txtNamaPemilik.clear();  
-        choiceJenisKendaraan.setValue(null);  
-        choiceKategoriPemilik.setValue(null);  
-    }  
-
-    private void keluarkanKendaraan() {  
-        // Logika untuk mengeluarkan kendaraan  
-        String nomorKendaraanToRemove = txtNomorKendaraan.getText();  
-
-        if (nomorKendaraanToRemove.isEmpty()) {  
-            showAlert("Input Tidak Valid", "Silakan masukkan nomor kendaraan untuk dikeluarkan!", Alert.AlertType.WARNING);  
-            return;  
-        }  
-
-        // Temukan kendaraan dalam list  
-        boolean ditemukan = kendaraanList.removeIf(kendaraan -> kendaraan.getNomorKendaraan().equals(nomorKendaraanToRemove));  
-
-        if (ditemukan) {  
-            String jenisKendaraan = getJenisKendaraan(nomorKendaraanToRemove);  
-            String kategoriPemilik = getKategoriPemilik(nomorKendaraanToRemove);  
-            releaseParkingSlot(kategoriPemilik, jenisKendaraan);  
-            deleteKendaraanFromDatabase(nomorKendaraanToRemove);  
-            showAlert("Berhasil", "Kendaraan berhasil dikeluarkan!", Alert.AlertType.INFORMATION);  
-        } else {  
-            showAlert("Tidak Ditemukan", "Kendaraan tidak ditemukan untuk nomor: " + nomorKendaraanToRemove, Alert.AlertType.WARNING);  
-        }  
-    }  
-
-    private void saveKendaraanToDatabase(Kendaraan kendaraan) {  
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {  
-            String sql = "INSERT INTO kendaraan (nomor_kendaraan, jenis_kendaraan, nama_pemilik, kategori_pemilik, waktu_masuk) VALUES (?, ?, ?, ?, NOW())";  
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {  
-                statement.setString(1, kendaraan.getNomorKendaraan());  
-                statement.setString(2, kendaraan.getJenisKendaraan());  
-                statement.setString(3, kendaraan.getNamaPemilik());  
-                statement.setString(4, kendaraan.getKategoriPemilik());  
-                statement.executeUpdate();  
-            }  
-        } catch (SQLException e) {  
-            e.printStackTrace();  
-        }  
-    }  
-
-    private void deleteKendaraanFromDatabase(String nomorKendaraan) {  
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {  
-            String sql = "DELETE FROM kendaraan WHERE nomor_kendaraan = ?";  
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {  
-                statement.setString(1, nomorKendaraan);  
-                statement.executeUpdate();  
-            }  
-        } catch (SQLException e) {  
-            e.printStackTrace();  
-        }  
-    }  
-
-    private boolean isSlotAvailable(String jenisKendaraan, String kategoriPemilik) {  
-        String area = getAreaByCategory(kategoriPemilik);  
-        String sql = "SELECT kapasitas, terisi FROM slot_parkir WHERE area = ? AND jenis_kendaraan = ?";  
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);  
-             PreparedStatement statement = connection.prepareStatement(sql)) {  
-            statement.setString(1, area);  
-            statement.setString(2, jenisKendaraan);  
-            try (ResultSet resultSet = statement.executeQuery()) {  
-                if (resultSet.next()) {  
-                    int kapasitas = resultSet.getInt("kapasitas");  
-                    int terisi = resultSet.getInt("terisi");  
-                    return terisi < kapasitas;  
-                }  
-            }  
-        } catch (SQLException e) {  
-            e.printStackTrace();  
-        }  
-        return false;  
-    }  
-
-    private String getAreaByCategory(String kategoriPemilik) {  
-        switch (kategoriPemilik) {  
-            case "mahasiswa":  
-                return "mahasiswa";  
-            case "dosen":  
-                return "dosen";  
-            case "tamu":  
-                return "tamu";  
-            default:  
-                return "";  
-        }  
-    }  
-
-    private void updateParkingSlot(String kategoriPemilik, String jenisKendaraan) {  
-        String area = getAreaByCategory(kategoriPemilik);  
-        String sql = "UPDATE slot_parkir SET terisi = terisi + 1 WHERE area = ? AND jenis_kendaraan = ?";  
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);  
-             PreparedStatement statement = connection.prepareStatement(sql)) {  
-            statement.setString(1, area);  
-            statement.setString(2, jenisKendaraan);  
-            statement.executeUpdate();  
-        } catch (SQLException e) {  
-            e.printStackTrace();  
-        }  
-    }  
-
-    private void releaseParkingSlot(String kategoriPemilik, String jenisKendaraan) {  
-        String area = getAreaByCategory(kategoriPemilik);  
-        String sql = "UPDATE slot_parkir SET terisi = terisi - 1 WHERE area = ? AND jenis_kendaraan = ?";  
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);  
-             PreparedStatement statement = connection.prepareStatement(sql)) {  
-            statement.setString(1, area);  
-            statement.setString(2, jenisKendaraan);  
-            statement.executeUpdate();  
-        } catch (SQLException e) {  
-            e.printStackTrace();  
-        }  
-    }  
-
-    private String getJenisKendaraan(String nomorKendaraan) {  
-        String sql = "SELECT jenis_kendaraan FROM kendaraan WHERE nomor_kendaraan = ?";  
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);  
-             PreparedStatement statement = connection.prepareStatement(sql)) {  
-            statement.setString(1, nomorKendaraan);  
-            try (ResultSet resultSet = statement.executeQuery()) {  
-                if (resultSet.next()) {  
-                    return resultSet.getString("jenis_kendaraan");  
-                }  
-            }  
-        } catch (SQLException e) {  
-            e.printStackTrace();  
-        }  
-        return null;  
-    }  
-
-    private String getKategoriPemilik(String nomorKendaraan) {  
-        String sql = "SELECT kategori_pemilik FROM kendaraan WHERE nomor_kendaraan = ?";  
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);  
-             PreparedStatement statement = connection.prepareStatement(sql)) {  
-            statement.setString(1, nomorKendaraan);  
-            try (ResultSet resultSet = statement.executeQuery()) {  
-                if (resultSet.next()) {  
-                    return resultSet.getString("kategori_pemilik");  
-                }  
-            }  
-        } catch (SQLException e) {  
-            e.printStackTrace();  
-        }  
-        return null;  
-    }  
-
-    private void showAlert(String title, String message, Alert.AlertType alertType) {  
-        Alert alert = new Alert(alertType);  
-        alert.setTitle(title);  
-        alert.setHeaderText(null);  
-        alert.setContentText(message);  
-        alert.showAndWait();  
-    }  
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    
 }

@@ -5,16 +5,20 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/23.0.1" fx:controller="SimulasiController">  
+<AnchorPane prefHeight="502.0" prefWidth="671.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="SimulasiController">  
    <children>  
-      <Label layoutX="14.0" layoutY="14.0" text="Registrasi Kendaraan" />  
-      <TextField fx:id="txtNomorKendaraan" layoutX="75.0" layoutY="45.0" promptText="Nomor Kendaraan" />  
-      <TextField fx:id="txtNamaPemilik" layoutX="265.0" layoutY="45.0" promptText="Nama Pemilik" />  
-      <ChoiceBox fx:id="choiceJenisKendaraan" layoutX="14.0" layoutY="120.0" />  
-      <ChoiceBox fx:id="choiceKategoriPemilik" layoutX="180.0" layoutY="120.0" />  
-      <Button fx:id="btnMasuk" layoutX="14.0" layoutY="160.0" text="Masuk" />  
-      <Button fx:id="btnKeluar" layoutX="100.0" layoutY="160.0" text="Keluar" />  
-      <Button fx:id="btnPengelola" layoutX="380.0" layoutY="160.0" text="Pengelola" />  
+      <Label layoutX="182.0" layoutY="30.0" prefHeight="59.0" prefWidth="307.0" text="Simulasi Parkir Universitas">
+         <font>
+            <Font name="Agency FB Bold" size="28.0" />
+         </font></Label>  
+      <TextField fx:id="txtNomorKendaraan" layoutX="243.0" layoutY="101.0" promptText="Nomor Kendaraan" />  
+      <TextField fx:id="txtNamaPemilik" layoutX="243.0" layoutY="140.0" promptText="Nama Pemilik" />  
+      <ChoiceBox fx:id="choiceJenisKendaraan" layoutX="243.0" layoutY="212.0" prefHeight="25.0" prefWidth="149.0" />  
+      <ChoiceBox fx:id="choiceKategoriPemilik" layoutX="243.0" layoutY="177.0" prefHeight="25.0" prefWidth="149.0" />  
+      <Button fx:id="btnMasuk" layoutX="43.0" layoutY="238.0" text="Masuk" />  
+      <Button fx:id="btnKeluar" layoutX="124.0" layoutY="238.0" text="Keluar" />  
+      <Button fx:id="btnPengelola" layoutX="544.0" layoutY="250.0" text="Pengelola" />  
    </children>  
 </AnchorPane>
