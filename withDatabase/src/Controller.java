@@ -129,49 +129,54 @@ private <T> void setCenterAlignment(TableColumn<Kendaraan, T> column) {
 
 // -------------------------------------------------------------------------------------------//
 private void saveKendaraan() {
+    // Pengecekan input
     if (choiceJenisKendaraan.getValue() == null || choiceJenisKendaraan.getValue().isEmpty()) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Peringatan");
-        alert.setHeaderText("Input Tidak Valid");
-        alert.setContentText("Silakan pilih jenis kendaraan terlebih dahulu!");
-        alert.showAndWait();
+        showAlert("Peringatan", "Silakan pilih jenis kendaraan terlebih dahulu!", Alert.AlertType.WARNING);
         return;
     }
 
     if (choiceKategoriPemilik.getValue() == null || choiceKategoriPemilik.getValue().isEmpty()) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Peringatan");
-        alert.setHeaderText("Input Tidak Valid");
-        alert.setContentText("Silakan pilih kategori pemilik terlebih dahulu!");
-        alert.showAndWait();
+        showAlert("Peringatan", "Silakan pilih kategori pemilik terlebih dahulu!", Alert.AlertType.WARNING);
         return;
     }
 
+    // Pengecekan duplikasi
     try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
-        String sql = "INSERT INTO data_kendaraan (nomor_kendaraan, jenis_kendaraan, nama_pemilik, kategori_pemilik) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, txtNomorKendaraan.getText());
-            statement.setString(2, choiceJenisKendaraan.getValue()); // Ambil nilai dari ChoiceBox
-            statement.setString(3, txtNamaPemilik.getText());
-            statement.setString(4, choiceKategoriPemilik.getValue());
+        String checkSql = "SELECT COUNT(*) FROM data_kendaraan WHERE nomor_kendaraan = ?";
+        try (PreparedStatement checkStatement = connection.prepareStatement(checkSql)) {
+            checkStatement.setString(1, txtNomorKendaraan.getText());
 
-            int rowsInserted = statement.executeUpdate();
-            if (rowsInserted > 0) {
-                // Setelah data disimpan, pindahkan kendaraan ke kategori parkir
-                KendaraanImpl kendaraan = new KendaraanImpl(
-                    0, // ID akan dihasilkan oleh database
-                    txtNomorKendaraan.getText(),
-                    choiceJenisKendaraan.getValue(),
-                    txtNamaPemilik.getText(),
-                    choiceKategoriPemilik.getValue()
-                );
-                kendaraan.simpanKeDatabase(); // Pindahkan ke tabel parkir sesuai kategori pemilik
+            ResultSet resultSet = checkStatement.executeQuery();
+            if (resultSet.next() && resultSet.getInt(1) > 0) {
+                // Jika kendaraan sudah ada, tampilkan pesan
+                showAlert("Peringatan", "Kendaraan dengan nomor " + txtNomorKendaraan.getText() + " sudah terdaftar.", Alert.AlertType.WARNING);
+                return;
+            }
 
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Sukses");
-                alert.setHeaderText("Data berhasil disimpan");
-                alert.setContentText("Data kendaraan berhasil disimpan ke database.");
-                alert.showAndWait();
+            // Jika kendaraan belum ada, simpan data
+            String sql = "INSERT INTO data_kendaraan (nomor_kendaraan, jenis_kendaraan, nama_pemilik, kategori_pemilik) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, txtNomorKendaraan.getText());
+                statement.setString(2, choiceJenisKendaraan.getValue());
+                statement.setString(3, txtNamaPemilik.getText());
+                statement.setString(4, choiceKategoriPemilik.getValue());
+
+                int rowsInserted = statement.executeUpdate();
+                if (rowsInserted > 0) {
+                    // Data berhasil disimpan
+                    showAlert("Sukses", "Data kendaraan berhasil disimpan ke database.", Alert.AlertType.INFORMATION);
+                    displayKendaraan();
+
+                    // Bersihkan form input setelah simpan
+                    txtNomorKendaraan.clear();
+                    txtNamaPemilik.clear();
+                    choiceJenisKendaraan.setValue("");
+                    choiceKategoriPemilik.setValue("");
+
+                    // Jangan simpan lagi ke tabel lain jika tidak perlu
+                    // Pastikan hanya satu kali penyimpanan yang dilakukan (yaitu ke tabel utama)
+
+                }
             }
         }
     } catch (SQLException e) {
@@ -179,6 +184,7 @@ private void saveKendaraan() {
         showAlert("Error", "Gagal menyimpan data kendaraan", Alert.AlertType.ERROR);
     }
 }
+
 
 // -------------------------------------------------------------------------------------------//
 
@@ -228,6 +234,9 @@ private void saveKendaraan() {
         } catch (SQLException e) {  
             e.printStackTrace();  
         }  
+
+        displayKendaraan();
+
     }  
 
     private void openSimulasiPage() {  
@@ -250,27 +259,72 @@ private void saveKendaraan() {
         alert.showAndWait();  
     }  
 
-
     
-    private void generateDailyReport() {  
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {  
-            String sql = "SELECT COUNT(*) AS total_masuk, " +  
-                         "SUM(CASE WHEN jenis_kendaraan = 'motor' THEN 1 ELSE 0 END) AS total_motor, " +  
-                         "SUM(CASE WHEN jenis_kendaraan = 'mobil' THEN 1 ELSE 0 END) AS total_mobil " +  
-                         "FROM kendaraan WHERE DATE(waktu_masuk) = CURDATE()";  
-            try (PreparedStatement statement = connection.prepareStatement(sql);  
-                 ResultSet resultSet = statement.executeQuery()) {  
-                if (resultSet.next()) {  
-                    int totalMasuk = resultSet.getInt("total_masuk");  
-                    int totalMotor = resultSet.getInt("total_motor");  
-                    int totalMobil = resultSet.getInt("total_mobil");  
-                    showAlert("Laporan Harian", "Jumlah Kendaraan Masuk: " + totalMasuk +  
-                                                  "\nJumlah Motor: " + totalMotor +  
-                                                  "\nJumlah Mobil: " + totalMobil, Alert.AlertType.INFORMATION);  
-                }  
-            }  
-        } catch (SQLException e) {  
-            e.printStackTrace();  
-        }  
-    }  
-}
+    private void generateDailyReport() {
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
+            // Query laporan harian yang sudah dimodifikasi tanpa kolom waktu_keluar
+            String sql = "SELECT 'Mahasiswa' AS kategori_pemilik, " +
+                         "SUM(CASE WHEN jenis_kendaraan = 'Mobil' THEN 1 ELSE 0 END) AS total_mobil_masuk, " +
+                         "SUM(CASE WHEN jenis_kendaraan = 'Motor' THEN 1 ELSE 0 END) AS total_motor_masuk, " +
+                         "COUNT(*) AS total_terparkir, " +
+                         "(SELECT COUNT(*) FROM mahasiswa_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*) AS total_mobil_keluar, " +
+                         "(SELECT COUNT(*) FROM mahasiswa_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*) AS total_motor_keluar " +
+                         "FROM mahasiswa_kendaraan WHERE DATE(waktu_masuk) = CURDATE() " +
+                         "UNION ALL " +
+                         "SELECT 'Dosen', " +
+                         "SUM(CASE WHEN jenis_kendaraan = 'Mobil' THEN 1 ELSE 0 END), " +
+                         "SUM(CASE WHEN jenis_kendaraan = 'Motor' THEN 1 ELSE 0 END), " +
+                         "COUNT(*), " +
+                         "(SELECT COUNT(*) FROM dosen_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*), " +
+                         "(SELECT COUNT(*) FROM dosen_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*) " +
+                         "FROM dosen_kendaraan WHERE DATE(waktu_masuk) = CURDATE() " +
+                         "UNION ALL " +
+                         "SELECT 'Tamu', " +
+                         "SUM(CASE WHEN jenis_kendaraan = 'Mobil' THEN 1 ELSE 0 END), " +
+                         "SUM(CASE WHEN jenis_kendaraan = 'Motor' THEN 1 ELSE 0 END), " +
+                         "COUNT(*), " +
+                         "(SELECT COUNT(*) FROM tamu_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*), " +
+                         "(SELECT COUNT(*) FROM tamu_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*) " +
+                         "FROM tamu_kendaraan WHERE DATE(waktu_masuk) = CURDATE()";
+    
+            StringBuilder reportBuilder = new StringBuilder();
+            try (PreparedStatement statement = connection.prepareStatement(sql);
+                 ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String kategori = resultSet.getString("kategori_pemilik");
+                    int totalMobilMasuk = resultSet.getInt("total_mobil_masuk");
+                    int totalMotorMasuk = resultSet.getInt("total_motor_masuk");
+                    int totalMobilKeluar = resultSet.getInt("total_mobil_keluar");
+                    int totalMotorKeluar = resultSet.getInt("total_motor_keluar");
+                    int totalTerparkir = resultSet.getInt("total_terparkir");
+    
+                    // Menyusun laporan untuk setiap kategori
+                    reportBuilder.append(kategori).append(":\n")
+                                 .append("- Total Mobil Masuk: ").append(totalMobilMasuk).append("\n")
+                                 .append("- Total Motor Masuk: ").append(totalMotorMasuk).append("\n")
+                                 .append("- Total Mobil Keluar: ").append(totalMobilKeluar).append("\n")
+                                 .append("- Total Motor Keluar: ").append(totalMotorKeluar).append("\n")
+                                 .append("- Total yang masih Terparkir: ").append(totalTerparkir).append("\n\n");
+                }
+            }
+    
+            // Muat halaman page.fxml
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("ReportPage.fxml"));
+            Parent root = loader.load();
+    
+            // Set data laporan ke controller
+            ReportController controller = loader.getController();
+            controller.setReportData(reportBuilder.toString());
+    
+            // Tampilkan halaman laporan
+            Stage stage = new Stage();
+            stage.setTitle("Laporan Harian");
+            stage.setScene(new Scene(root));
+            stage.show();
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+}    
