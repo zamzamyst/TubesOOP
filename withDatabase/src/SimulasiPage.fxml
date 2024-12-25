@@ -1,24 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="502.0" prefWidth="671.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="SimulasiController">  
+<AnchorPane prefHeight="332.0" prefWidth="485.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="SimulationController">  
    <children>  
-      <Label layoutX="182.0" layoutY="30.0" prefHeight="59.0" prefWidth="307.0" text="Simulasi Parkir Universitas">
+      <Label layoutX="49.0" layoutY="14.0" prefHeight="59.0" prefWidth="398.0" text="Sistem Parkir Telkom University">
          <font>
-            <Font name="Agency FB Bold" size="28.0" />
+            <Font name="Segoe UI Bold" size="26.0" />
          </font></Label>  
-      <TextField fx:id="txtNomorKendaraan" layoutX="243.0" layoutY="101.0" promptText="Nomor Kendaraan" />  
-      <TextField fx:id="txtNamaPemilik" layoutX="243.0" layoutY="140.0" promptText="Nama Pemilik" />  
-      <ChoiceBox fx:id="choiceJenisKendaraan" layoutX="243.0" layoutY="212.0" prefHeight="25.0" prefWidth="149.0" />  
-      <ChoiceBox fx:id="choiceKategoriPemilik" layoutX="243.0" layoutY="177.0" prefHeight="25.0" prefWidth="149.0" />  
-      <Button fx:id="btnMasuk" layoutX="43.0" layoutY="238.0" text="Masuk" />  
-      <Button fx:id="btnKeluar" layoutX="124.0" layoutY="238.0" text="Keluar" />  
-      <Button fx:id="btnPengelola" layoutX="544.0" layoutY="250.0" text="Pengelola" />  
+      <TextField fx:id="txtNomorKendaraan" layoutX="111.0" layoutY="122.0" prefHeight="32.0" prefWidth="273.0" promptText="B 1111 ABC">
+         <font>
+            <Font name="Segoe UI" size="12.0" />
+         </font></TextField>  
+      <Button fx:id="btnMasuk" layoutX="111.0" layoutY="170.0" prefHeight="25.0" prefWidth="68.0" text="Masuk" />  
+      <Button fx:id="btnKeluar" layoutX="193.0" layoutY="170.0" prefHeight="25.0" prefWidth="67.0" text="Keluar" />  
+      <Button fx:id="btnPengelola" layoutX="205.0" layoutY="270.0" prefHeight="32.0" prefWidth="76.0" text="Registrasi" />
+      <Label layoutX="111.0" layoutY="93.0" prefHeight="25.0" prefWidth="273.0" text="Nomor kendaraan:" textAlignment="CENTER">
+         <font>
+            <Font name="Segoe UI" size="13.0" />
+         </font>
+      </Label>
+      <Label layoutX="166.0" layoutY="238.0" prefHeight="32.0" prefWidth="153.0" text="Kendaraan belum terdaftar?">
+         <font>
+            <Font name="Segoe UI" size="12.0" />
+         </font>
+      </Label>  
    </children>  
 </AnchorPane>

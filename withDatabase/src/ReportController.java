@@ -30,7 +30,7 @@ public class ReportController {
     // Navigasi kembali ke halaman utama
     private void goBackToMainPage() {
         try {  
-            Parent root = FXMLLoader.load(getClass().getResource("MainPage.fxml"));  
+            Parent root = FXMLLoader.load(getClass().getResource("RegistrationPage.fxml"));  
             Stage stage = (Stage) btnBack.getScene().getWindow();  
             stage.setScene(new Scene(root));  
             stage.show();  

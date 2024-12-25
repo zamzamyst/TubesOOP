@@ -6,18 +6,23 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="400" prefWidth="600" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/23.0.1" fx:controller="ReportController">
+<AnchorPane prefHeight="405.0" prefWidth="547.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ReportController">
     <children>
         <!-- Label untuk Judul -->
-        <Label layoutX="219.0" layoutY="14.0" text="Laporan Harian">
+        <Label layoutX="71.0" layoutY="21.0" text="Laporan Parkir Harian Universitas">
          <font>
-            <Font size="24.0" />
+            <Font name="Segoe UI Bold" size="26.0" />
          </font></Label>
         
         <!-- TextArea untuk Menampilkan Laporan -->
-        <TextArea fx:id="reportTextArea" editable="false" layoutX="50" layoutY="60" prefHeight="280" prefWidth="500" wrapText="true" />
+        <TextArea fx:id="reportTextArea" editable="false" layoutX="66.0" layoutY="102.0" prefHeight="238.0" prefWidth="416.0" wrapText="true" />
 
         <!-- Button untuk Kembali -->
-        <Button fx:id="btnBack" layoutX="250" layoutY="360" prefWidth="100" text="Kembali" />
+        <Button fx:id="btnBack" layoutX="236.0" layoutY="356.0" prefHeight="32.0" prefWidth="76.0" text="Kembali" />
+      <Label layoutX="186.0" layoutY="72.0" text="Detail aktivitas parkir hari ini:">
+         <font>
+            <Font name="Segoe UI Italic" size="14.0" />
+         </font>
+      </Label>
     </children>
 </AnchorPane>

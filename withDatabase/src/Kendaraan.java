@@ -37,6 +37,7 @@ public abstract class Kendaraan {
     }  
 
     public abstract void simpanKeDatabase();  
+    
     public abstract void hapusDariDatabase();  
     
 }
