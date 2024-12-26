@@ -1,29 +1,19 @@
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 import javafx.fxml.FXML;  
 import javafx.fxml.FXMLLoader;  
-import javafx.scene.control.Button;  
-import javafx.scene.control.ChoiceBox;  
-import javafx.scene.control.TextField;  
 import javafx.stage.Stage;  
 import javafx.scene.Parent;  
 import javafx.scene.Scene;  
+import javafx.scene.control.Button;  
+import javafx.scene.control.TextField;  
 import javafx.scene.control.Alert;  
-import javafx.scene.control.Alert.AlertType;   
-import javafx.scene.Node;  
+
 
 public class SimulationController {  
 
     @FXML  
     private TextField txtNomorKendaraan;  
-
-    @FXML  
-    private TextField txtNamaPemilik;   
 
     @FXML  
     private Button btnMasuk;  
@@ -124,7 +114,7 @@ public class SimulationController {
                         }
     
                         if (!slotAvailable) {
-                            showAlert("Slot Penuh", "Tidak ada slot parkir tersedia untuk kendaraan jenis " + jenisKendaraan + " milik " + kategoriPemilik);
+                            showAlert("Slot Penuh", "Slot parkir untuk " + jenisKendaraan + " " + kategoriPemilik + " penuh!");
                             return;
                         }
     
@@ -142,7 +132,7 @@ public class SimulationController {
                         showAlert("Sukses", "Kendaraan berhasil masuk parkir.");
                     }
                 } else {
-                    showAlert("Kendaraan Tidak Terdaftar", "Kendaraan dengan nomor " + nomorKendaraan + " tidak terdaftar.");
+                    showAlert("Peringatan", "Silahkan mendaftarkan kendaraan terlebih dahulu..");
                 }
             }
         } catch (SQLException e) {
@@ -228,10 +218,17 @@ public class SimulationController {
     
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
+        alert.setTitle("Peringatan");
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
     }
     
 }
+
+/* 
+import javafx.scene.control.Alert.AlertType;   
+import javafx.scene.Node;
+import java.io.IOException;
+import javafx.scene.control.ChoiceBox;  
+*/
