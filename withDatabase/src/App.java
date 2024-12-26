@@ -1,3 +1,8 @@
+// Kelas untuk Memulai Program
+
+/* ======================================================== */
+
+// Meng-Import Packages JavaFX (Built-in)
 import javafx.application.Application;  
 import javafx.fxml.FXMLLoader;  
 import javafx.scene.Parent;  
@@ -7,6 +12,8 @@ import javafx.stage.Stage;
 public class App extends Application {  
     @Override  
     public void start(Stage primaryStage) throws Exception {  
+        
+        // Halaman awal yang akan ditampilkan
         Parent root = FXMLLoader.load(getClass().getResource("SimulasiPage.fxml"));  
         primaryStage.setTitle("Kelompok 3 - Tugas Besar OOP");  
         primaryStage.setScene(new Scene(root));  

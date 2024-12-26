@@ -1,5 +1,11 @@
-import java.sql.*;  
+// Kelas Controller untuk Registrasi
 
+/* ======================================================== */
+
+// Meng-Import Packages SQL Java (Built-in)
+import java.sql.*;
+
+// Meng-Import Packages JavaFX (Built-in)
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.collections.FXCollections;
@@ -15,7 +21,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
-
 
 public class RegistrationController {  
     @FXML  
@@ -37,14 +42,12 @@ public class RegistrationController {
     @FXML
     private Button btnLaporanHarian;
 
-
     @FXML  
     private TextArea textArea;  
-    // Deklarasi untuk TableView
+    
     @FXML
     private TableView<Kendaraan> tableView;
 
-    // Deklarasi untuk kolom
     @FXML
     private TableColumn<Kendaraan, Integer> columnId;
     @FXML
@@ -56,53 +59,56 @@ public class RegistrationController {
     @FXML
     private TableColumn<Kendaraan, String> columnKategoriPemilik;
 
-    // ObservableList untuk menyimpan data
+    // ObservableList untuk mengambil data, disimpan di ArrayList
     private ObservableList<Kendaraan> kendaraanList = FXCollections.observableArrayList();
 
 // -------------------------------------------------------------------------------------------//
-@FXML
-private void initialize() {
-    // Menyiapkan kolom untuk ambil data dari
-    columnId.setCellValueFactory(new PropertyValueFactory<>("id"));
-    columnNomorKendaraan.setCellValueFactory(new PropertyValueFactory<>("nomorKendaraan"));
-    columnJenisKendaraan.setCellValueFactory(new PropertyValueFactory<>("jenisKendaraan"));
-    columnNamaPemilik.setCellValueFactory(new PropertyValueFactory<>("namaPemilik"));
-    columnKategoriPemilik.setCellValueFactory(new PropertyValueFactory<>("kategoriPemilik"));
+    @FXML
+    private void initialize() {
 
-    tableView.setItems(kendaraanList);
+        // Menyiapkan kolom untuk ambil data dari masing masing variabel:
+        columnId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        columnNomorKendaraan.setCellValueFactory(new PropertyValueFactory<>("nomorKendaraan"));
+        columnJenisKendaraan.setCellValueFactory(new PropertyValueFactory<>("jenisKendaraan"));
+        columnNamaPemilik.setCellValueFactory(new PropertyValueFactory<>("namaPemilik"));
+        columnKategoriPemilik.setCellValueFactory(new PropertyValueFactory<>("kategoriPemilik"));
 
-     // Tambahkan pilihan ke ChoiceBox
-    choiceJenisKendaraan.getItems().addAll("Mobil", "Motor");
-    choiceKategoriPemilik.getItems().addAll("Mahasiswa", "Dosen", "Tamu");
-    
-    // Pilihan default
-    choiceJenisKendaraan.setValue("");
+        // Menampilkan data yang sebelumnya di simpan di ArrayList
+        tableView.setItems(kendaraanList);
 
-    btnSimpan.setOnAction(event -> saveKendaraan());
-    btnTampilkan.setOnAction(event -> displayKendaraan());
-    btnHapus.setOnAction(event -> deleteKendaraan());
-    btnSimulasi.setOnAction(event -> openSimulasiPage());
-    btnLaporanHarian.setOnAction(event -> generateDailyReport());  
+        // Menyetel opsi untuk ChoiceBox
+        choiceJenisKendaraan.getItems().addAll("Mobil", "Motor");
+        choiceKategoriPemilik.getItems().addAll("Mahasiswa", "Dosen", "Tamu");
 
-}
+        // Menyetel action untuk setiap Button
+        btnSimpan.setOnAction(event -> saveKendaraan());
+        btnTampilkan.setOnAction(event -> displayKendaraan());
+        btnHapus.setOnAction(event -> deleteKendaraan());
+        btnSimulasi.setOnAction(event -> openSimulasiPage());
+        btnLaporanHarian.setOnAction(event -> generateDailyReport());  
+    }
 
+    // Mendeklarasikan variabel untuk kebutuhan koneksi DB
     private final String URL = "jdbc:mysql://localhost:3306/data_kendaraan";  
     private final String USER = "root";   
     private final String PASSWORD = ""; 
-
+    
+    // Method Void 1
     private void saveKendaraan() {
-        // Pengecekan input
+
+        // Pengecekan apabila Jenis Kendaraan belum dipilih.
         if (choiceJenisKendaraan.getValue() == null || choiceJenisKendaraan.getValue().isEmpty()) {
             showAlert("Peringatan", "Silakan pilih jenis kendaraan terlebih dahulu!", Alert.AlertType.WARNING);
             return;
         }
 
+        // Pengecekan apabila Kategori Pemilik belum dipilih.
         if (choiceKategoriPemilik.getValue() == null || choiceKategoriPemilik.getValue().isEmpty()) {
             showAlert("Peringatan", "Silakan pilih kategori pemilik terlebih dahulu!", Alert.AlertType.WARNING);
             return;
         }
 
-        // Pengecekan duplikasi
+        // Pengecekan untuk mencegah duplikasi penyimpanan data
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
             String checkSql = "SELECT COUNT(*) FROM data_kendaraan WHERE nomor_kendaraan = ?";
             try (PreparedStatement checkStatement = connection.prepareStatement(checkSql)) {
@@ -110,46 +116,50 @@ private void initialize() {
 
                 ResultSet resultSet = checkStatement.executeQuery();
                 if (resultSet.next() && resultSet.getInt(1) > 0) {
-                    // Jika kendaraan sudah ada, tampilkan pesan
-                    showAlert("Peringatan", "Kendaraan dengan nomor " + txtNomorKendaraan.getText() + " sudah terdaftar.", Alert.AlertType.WARNING);
+
+                    // Jika kendaraan sudah ada
+                    showAlert("Informasi", "Kendaraan dengan nomor " + txtNomorKendaraan.getText() + " sudah terdaftar.", Alert.AlertType.WARNING);
                     return;
                 }
 
-                // Jika kendaraan belum ada, simpan data
-                String sql = "INSERT INTO data_kendaraan (nomor_kendaraan, jenis_kendaraan, nama_pemilik, kategori_pemilik) VALUES (?, ?, ?, ?)";
-                try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                    statement.setString(1, txtNomorKendaraan.getText());
-                    statement.setString(2, choiceJenisKendaraan.getValue());
-                    statement.setString(3, txtNamaPemilik.getText());
-                    statement.setString(4, choiceKategoriPemilik.getValue());
+            // Jika kendaraan belum ada, simpan data
+            String sql = "INSERT INTO data_kendaraan (nomor_kendaraan, jenis_kendaraan, nama_pemilik, kategori_pemilik) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, txtNomorKendaraan.getText());
+                statement.setString(2, choiceJenisKendaraan.getValue());
+                statement.setString(3, txtNamaPemilik.getText());
+                statement.setString(4, choiceKategoriPemilik.getValue());
 
-                    int rowsInserted = statement.executeUpdate();
-                    if (rowsInserted > 0) {
-                        // Data berhasil disimpan
-                        showAlert("Sukses", "Data kendaraan berhasil disimpan ke database.", Alert.AlertType.INFORMATION);
-                        displayKendaraan();
+                int rowsInserted = statement.executeUpdate();
+                if (rowsInserted > 0) {
 
-                        // Bersihkan form input setelah simpan
-                        txtNomorKendaraan.clear();
-                        txtNamaPemilik.clear();
-                        choiceJenisKendaraan.setValue("");
-                        choiceKategoriPemilik.setValue("");
+                    // Jika Data berhasil disimpan
+                    showAlert("Informasi", "Data kendaraan berhasil disimpan ke database.", Alert.AlertType.INFORMATION);
+                    displayKendaraan();
 
-                        // Jangan simpan lagi ke tabel lain jika tidak perlu
-                        // Pastikan hanya satu kali penyimpanan yang dilakukan (yaitu ke tabel utama)
+                    // Bersihkan form input setelah berhasil menyimpan
+                    txtNomorKendaraan.clear();
+                    txtNamaPemilik.clear();
+                    choiceJenisKendaraan.setValue("");
+                    choiceKategoriPemilik.setValue("");
                     }
                 }
             }
+
+        // Alert jika ada kesalahan pada MySQL (seperti belum ON)
         } catch (SQLException e) {
             e.printStackTrace();
             showAlert("Error", "Gagal menyimpan data kendaraan", Alert.AlertType.ERROR);
         }
     }
 
+    //  Methofd Void 2
     private void displayKendaraan() {
         
-        kendaraanList.clear(); // Kosongkan data sebelum menampilkan yang baru
+        // Kosongkan data sebelum menampilkan yang baru
+        kendaraanList.clear(); 
 
+        // Koneksi DB
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
             String sql = "SELECT * FROM data_kendaraan";
             try (Statement statement = connection.createStatement();
@@ -158,22 +168,27 @@ private void initialize() {
                 while (resultSet.next()) {
                     // Buat objek Kendaraan dari setiap baris di ResultSet
                     Kendaraan kendaraan = new KendaraanRegistered(
-                            resultSet.getInt("id"), // Ambil ID dari database
+
+                            // Ambil seluruh data untuk mengisi parameter constructor
+                            resultSet.getInt("id"), 
                             resultSet.getString("nomor_kendaraan"),
                             resultSet.getString("jenis_kendaraan"),
                             resultSet.getString("nama_pemilik"),
                             resultSet.getString("kategori_pemilik")
                     );
-                    // Tambahkan ke list
+                    //  Maukkan ke Observe ArrayList untuk tabel tadi
                     kendaraanList.add(kendaraan);
                 }
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
     
+    // method Void 3
     private void deleteKendaraan() {  
+
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {  
             String sql = "DELETE FROM data_kendaraan WHERE nomor_kendaraan = ?";  
             try (PreparedStatement statement = connection.prepareStatement(sql)) {  
@@ -191,9 +206,11 @@ private void initialize() {
             e.printStackTrace();  
         }  
 
+        // Menampilkan data setelah dihapus
         displayKendaraan();
     }  
 
+    // Method Void 4:
     private void openSimulasiPage() {  
         try {  
             Parent root = FXMLLoader.load(getClass().getResource("SimulasiPage.fxml"));  
@@ -205,44 +222,56 @@ private void initialize() {
         }  
     }
 
-    private void showAlert(String title, String message, Alert.AlertType alertType) {  
-        Alert alert = new Alert(alertType);  
-        alert.setTitle(title);  
-        alert.setHeaderText(null);  
-        alert.setContentText(message);  
-        alert.showAndWait();  
-    }  
-
+    // Method Void 5:
     private void generateDailyReport() {
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
-            // Query laporan harian yang sudah dimodifikasi tanpa kolom waktu_keluar
-        String sql = "SELECT 'Mahasiswa' AS kategori_pemilik, " +
+
+            // Query untuk menampilkan laporan harian
+            String sql = "SELECT 'Mahasiswa' AS kategori_pemilik, " +
+                        // Menghitung jumlah kendaraan berdasarkan jenisnya
                         "SUM(CASE WHEN jenis_kendaraan = 'Mobil' THEN 1 ELSE 0 END) AS total_mobil_masuk, " +
                         "SUM(CASE WHEN jenis_kendaraan = 'Motor' THEN 1 ELSE 0 END) AS total_motor_masuk, " +
+
+                        // Menghitung total kendaraan yang terparkir pada hari tersebut
                         "COUNT(*) AS total_terparkir, " +
                         "(SELECT COUNT(*) FROM mahasiswa_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*) AS total_mobil_keluar, " +
                         "(SELECT COUNT(*) FROM mahasiswa_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*) AS total_motor_keluar " +
                         "FROM mahasiswa_kendaraan WHERE DATE(waktu_masuk) = CURDATE() " +
+
+                        // Menggabungkan hasil dari tabel Mahasiswa
                         "UNION ALL " +
+                        
                         "SELECT 'Dosen', " +
+                        // Menghitung jumlah kendaraan berdasarkan jenisnya
                         "SUM(CASE WHEN jenis_kendaraan = 'Mobil' THEN 1 ELSE 0 END), " +
                         "SUM(CASE WHEN jenis_kendaraan = 'Motor' THEN 1 ELSE 0 END), " +
+
+                        // Menghitung total kendaraan yang terparkir pada hari tersebut
                         "COUNT(*), " +
                         "(SELECT COUNT(*) FROM dosen_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*), " +
                         "(SELECT COUNT(*) FROM dosen_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*) " +
                         "FROM dosen_kendaraan WHERE DATE(waktu_masuk) = CURDATE() " +
+
+                        // Menggabungkan hasil dari tabel Dosen
                         "UNION ALL " +
+
                         "SELECT 'Tamu', " +
+                        // Menghitung jumlah kendaraan berdasarkan jenisnya
                         "SUM(CASE WHEN jenis_kendaraan = 'Mobil' THEN 1 ELSE 0 END), " +
                         "SUM(CASE WHEN jenis_kendaraan = 'Motor' THEN 1 ELSE 0 END), " +
+
+                        // Menghitung total kendaraan yang terparkir pada hari tersebut
                         "COUNT(*), " +
                         "(SELECT COUNT(*) FROM tamu_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*), " +
                         "(SELECT COUNT(*) FROM tamu_kendaraan WHERE DATE(waktu_masuk) = CURDATE()) - COUNT(*) " +
                         "FROM tamu_kendaraan WHERE DATE(waktu_masuk) = CURDATE()";
 
+
             StringBuilder reportBuilder = new StringBuilder();
             try (PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet resultSet = statement.executeQuery()) {
+
+                // Membaca tabel temporary yang terbuat dari Query SQL
                 while (resultSet.next()) {
                     String kategori = resultSet.getString("kategori_pemilik");
                     int totalMobilMasuk = resultSet.getInt("total_mobil_masuk");
@@ -251,7 +280,7 @@ private void initialize() {
                     int totalMotorKeluar = resultSet.getInt("total_motor_keluar");
                     int totalTerparkir = resultSet.getInt("total_terparkir");
     
-                    // Menyusun laporan untuk setiap kategori
+                    // Mengubah format datanya menjadi laporan pakai ReportBuilder
                     reportBuilder.append(kategori).append(":\n")
                                 .append("- Total Mobil Masuk: ").append(totalMobilMasuk).append("\n")
                                 .append("- Total Motor Masuk: ").append(totalMotorMasuk).append("\n")
@@ -261,15 +290,14 @@ private void initialize() {
                 }
             }
     
-            // Muat halaman page.fxml
+            // Membuka Halaman Laporan Harian
             FXMLLoader loader = new FXMLLoader(getClass().getResource("ReportPage.fxml"));
             Parent root = loader.load();
     
-            // Set data laporan ke controller
+            // Mengirimkan data yang disususn di ReportBuilder ke Controller
             ReportController controller = loader.getController();
             controller.setReportData(reportBuilder.toString());
     
-            // Tampilkan halaman laporan
             Stage stage = new Stage();
             stage.setTitle("Laporan Harian");
             stage.setScene(new Scene(root));
@@ -280,7 +308,20 @@ private void initialize() {
         }
     }
     
+
+    // Method Void 6:
+    private void showAlert(String title, String message, Alert.AlertType alertType) {  
+        Alert alert = new Alert(alertType);  
+        alert.setTitle(title);  
+        alert.setHeaderText(null);  
+        alert.setContentText(message);  
+        alert.showAndWait();  
+    }  
+
 }    
+
+
+
 
 
 /*

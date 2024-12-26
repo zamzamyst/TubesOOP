@@ -1,4 +1,8 @@
+// Kelas Controller untuk Menampilkan Laporan Harian
 
+/* ======================================================== */
+
+// Meng-Import Packages JavaFX (Built-in)
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
@@ -14,19 +18,20 @@ public class ReportController {
     @FXML
     private Button btnBack;
 
-    // Set data laporan ke TextArea
+    // Method untuk memasukkan data report ke TextArea GUI
     public void setReportData(String reportData) {
         reportTextArea.setText(reportData);
     }
 
-    // Inisialisasi tombol kembali
     @FXML
     private void initialize() {
-        btnBack.setOnAction(event -> goBackToMainPage());
+
+        // Menyetel aksi klik button
+        btnBack.setOnAction(event -> backToRegistrationPage());
     }
 
-    // Navigasi kembali ke halaman utama
-    private void goBackToMainPage() {
+    // Method Void: Untuk kembali ke Registration Page
+    private void backToRegistrationPage() {
         try {  
             Parent root = FXMLLoader.load(getClass().getResource("RegistrationPage.fxml"));  
             Stage stage = (Stage) btnBack.getScene().getWindow();  

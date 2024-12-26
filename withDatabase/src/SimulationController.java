@@ -1,5 +1,11 @@
+// Kelas Controller untuk Simulasi Parkir
+
+/* ======================================================== */
+
+// Meng-Import Packages SQL Java (Built-in)
 import java.sql.*;
 
+// Meng-Import Packages JavaFX (Built-in)
 import javafx.fxml.FXML;  
 import javafx.fxml.FXMLLoader;  
 import javafx.stage.Stage;  
@@ -8,7 +14,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;  
 import javafx.scene.control.TextField;  
 import javafx.scene.control.Alert;  
-
 
 public class SimulationController {  
 
@@ -27,11 +32,13 @@ public class SimulationController {
     @FXML  
     public void initialize() {  
 
+        // Menyetel action tiap button
         btnMasuk.setOnAction(event -> masukParkir());  
         btnKeluar.setOnAction(event -> keluarParkir());  
-        btnPengelola.setOnAction(event -> openRegistrationPage());  // Memanggil metode openRegistrationPage  
+        btnPengelola.setOnAction(event -> openRegistrationPage());   
     }  
 
+    // Method Void: Membuka Halaman Registrasi
     private void openRegistrationPage() {  
         try {  
             Parent root = FXMLLoader.load(getClass().getResource("RegistrationPage.fxml"));  
@@ -44,17 +51,20 @@ public class SimulationController {
         }  
     }
 
+    // Method Void: Untuk aktivitas Masuk Parkir
     private void masukParkir() {
-        // Ambil nomor kendaraan dari input
+
+        // Ambil nomor kendaraan dari input GUI
         String nomorKendaraan = txtNomorKendaraan.getText();
     
-        // Validasi input
+        // Cek apakah nomor kendaraan sudah diisi?
         if (nomorKendaraan == null || nomorKendaraan.isEmpty()) {
-            showAlert("Input Tidak Valid", "Nomor kendaraan harus diisi!");
+            // Jika belum, maka Alert
+            showAlert("Peringatan", "Nomor kendaraan harus diisi!");
             return;
         }
     
-        // Cari data kendaraan di tabel parkir untuk memeriksa apakah kendaraan sudah terdaftar
+        // Cari data kendaraan di tabel Kendaraan Terdaftar untuk memeriksa apakah kendaraan sudah terdaftar
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/data_kendaraan", "root", "")) {
             String sql = "SELECT * FROM data_kendaraan WHERE nomor_kendaraan = ?";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -62,77 +72,97 @@ public class SimulationController {
     
                 ResultSet resultSet = statement.executeQuery();
                 if (resultSet.next()) {
-                    // Ambil data dari hasil query
+
+                    // Mengambil data dari hasil query
                     String jenisKendaraan = resultSet.getString("jenis_kendaraan");
                     String namaPemilik = resultSet.getString("nama_pemilik");
-                    String kategoriPemilik = resultSet.getString("kategori_pemilik"); // Ambil kategori pemilik
+                    String kategoriPemilik = resultSet.getString("kategori_pemilik"); 
     
                     // Tentukan tabel yang akan digunakan berdasarkan kategori pemilik
                     String tabelKendaraan = "";
+
                     if (kategoriPemilik.equals("Mahasiswa")) {
                         tabelKendaraan = "mahasiswa_kendaraan";
+
                     } else if (kategoriPemilik.equals("Dosen")) {
                         tabelKendaraan = "dosen_kendaraan";
+
                     } else if (kategoriPemilik.equals("Tamu")) {
                         tabelKendaraan = "tamu_kendaraan";
                     }
     
-                    // Memeriksa apakah kendaraan sudah terdaftar di parkir
+                    // Memeriksa apakah kendaraan sudah masuk ke area parkirnya?
                     String sqlCheck = "SELECT COUNT(*) FROM " + tabelKendaraan + " WHERE nomor_kendaraan = ?";
                     try (PreparedStatement checkStatement = connection.prepareStatement(sqlCheck)) {
                         checkStatement.setString(1, nomorKendaraan);
-    
                         ResultSet checkResultSet = checkStatement.executeQuery();
                         if (checkResultSet.next() && checkResultSet.getInt(1) > 0) {
-                            // Jika kendaraan sudah ada di parkir, tampilkan pesan
-                            showAlert("Kendaraan Sudah Terdaftar", "Kendaraan dengan nomor " + nomorKendaraan + " sudah terdaftar di parkir.");
+
+                            // Jika kendaraan sudah ada di parkir, maka Alert
+                            showAlert("Informasi", "Kendaraan dengan nomor " + nomorKendaraan + " sudah terdaftar di parkir.");
                             return;
                         }
     
-                        // Lanjutkan jika kendaraan belum ada di parkir
+                        // jika kendaraan belum ada di parkir
                         Kendaraan kendaraan;
                         boolean slotAvailable = false;
+
                         switch (kategoriPemilik) {
                             case "Mahasiswa":
                                 kendaraan = new KendaraanMahasiswa(resultSet.getInt("id"), nomorKendaraan, jenisKendaraan, namaPemilik);
-                                slotAvailable = KendaraanMahasiswa.isMotorSlotAvailable() && jenisKendaraan.equals("Motor")
+
+                                // Mengganti status slotAvailable jika pengembalian nilainya sesuai
+                                slotAvailable = KendaraanMahasiswa.isMotorSlotAvailable() && jenisKendaraan.equals("Motor") // status 
                                                 || KendaraanMahasiswa.isMobilSlotAvailable() && jenisKendaraan.equals("Mobil");
                                 break;
+
                             case "Dosen":
                                 kendaraan = new KendaraanDosen(resultSet.getInt("id"), nomorKendaraan, jenisKendaraan, namaPemilik);
+
+                                // Mengganti status slotAvailable jika pengembalian nilainya sesuai
                                 slotAvailable = KendaraanDosen.isMotorSlotAvailable() && jenisKendaraan.equals("Motor")
                                                 || KendaraanDosen.isMobilSlotAvailable() && jenisKendaraan.equals("Mobil");
                                 break;
+                                
                             case "Tamu":
                                 kendaraan = new KendaraanTamu(resultSet.getInt("id"), nomorKendaraan, jenisKendaraan, namaPemilik);
+
+                                // Mengganti status slotAvailable jika pengembalian nilainya sesuai
                                 slotAvailable = KendaraanTamu.isMotorSlotAvailable() && jenisKendaraan.equals("Motor")
                                                 || KendaraanTamu.isMobilSlotAvailable() && jenisKendaraan.equals("Mobil");
                                 break;
+
+                            // Antisipasi apabila kategori nya tidak terdeteksi
                             default:
                                 showAlert("Error", "Kategori pemilik tidak valid.");
                                 return;
                         }
-    
+                        
+                        // Jika status SlotAvailable nya masih false, maka Alert
                         if (!slotAvailable) {
-                            showAlert("Slot Penuh", "Slot parkir untuk " + jenisKendaraan + " " + kategoriPemilik + " penuh!");
+                            showAlert("Peringatan", "Slot parkir untuk " + jenisKendaraan + " " + kategoriPemilik + " sudah penuh!");
                             return;
                         }
     
-                        // Cek slot parkir berdasarkan jenis kendaraan
+                        // Rangkaian untuk menampilkan notifikasi ketersediaan Slot Parkir (berdasarkan pemilik)
                         if (kendaraan instanceof KendaraanMahasiswa) {
                             ((KendaraanMahasiswa) kendaraan).cekSlotParkir();
+
                         } else if (kendaraan instanceof KendaraanDosen) {
                             ((KendaraanDosen) kendaraan).cekSlotParkir();
+
                         } else if (kendaraan instanceof KendaraanTamu) {
                             ((KendaraanTamu) kendaraan).cekSlotParkir();
                         }
     
-                        // Memanggil metode untuk simpan ke database
+                        // Menyimpan ke database
                         kendaraan.simpanKeDatabase();
-                        showAlert("Sukses", "Kendaraan berhasil masuk parkir.");
+                        showAlert("Informasi", "Kendaraan berhasil masuk parkir.");
                     }
+                
+                // Jika belum terdaftar kendaraannya
                 } else {
-                    showAlert("Peringatan", "Silahkan mendaftarkan kendaraan terlebih dahulu..");
+                    showAlert("Peringatan", "Kendaraan anda belum terdaftar!");
                 }
             }
         } catch (SQLException e) {
@@ -140,19 +170,19 @@ public class SimulationController {
         }
     }
     
-    
-    
+    // Method Void: untuk aktivitas keluar parkir 
     private void keluarParkir() {
-        // Ambil nomor kendaraan dari input
+
+        // Ambil nomor kendaraan dari input GUI
         String nomorKendaraan = txtNomorKendaraan.getText();
     
-        // Validasi input
+        // Cek apakah nomor kendaraan sudah diisi?
         if (nomorKendaraan == null || nomorKendaraan.isEmpty()) {
             showAlert("Input Tidak Valid", "Nomor kendaraan harus diisi!");
             return;
         }
     
-        // Cari data kendaraan di tabel parkir berdasarkan nomor kendaraan
+        // Cari data kendaraan di tabel Kendaraan Terdaftar berdasarkan nomor kendaraan
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/data_kendaraan", "root", "")) {
             String sql = "SELECT * FROM data_kendaraan WHERE nomor_kendaraan = ?";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -160,54 +190,67 @@ public class SimulationController {
     
                 ResultSet resultSet = statement.executeQuery();
                 if (resultSet.next()) {
+
                     // Ambil data dari hasil query
                     String jenisKendaraan = resultSet.getString("jenis_kendaraan");
                     String namaPemilik = resultSet.getString("nama_pemilik");
-                    String kategoriPemilik = resultSet.getString("kategori_pemilik"); // Ambil kategori pemilik
+                    String kategoriPemilik = resultSet.getString("kategori_pemilik");
     
                     // Tentukan tabel yang akan digunakan berdasarkan kategori pemilik
                     String tabelKendaraan = "";
+
                     if (kategoriPemilik.equals("Mahasiswa")) {
                         tabelKendaraan = "mahasiswa_kendaraan";
+
                     } else if (kategoriPemilik.equals("Dosen")) {
                         tabelKendaraan = "dosen_kendaraan";
+
                     } else if (kategoriPemilik.equals("Tamu")) {
                         tabelKendaraan = "tamu_kendaraan";
                     }
     
-                    // Memeriksa apakah kendaraan ada di tabel parkir yang sesuai
+                    // Memeriksa apakah kendaraan ada di tabel parkir (sesuai Pemilik)
                     String sqlCheck = "SELECT COUNT(*) FROM " + tabelKendaraan + " WHERE nomor_kendaraan = ?";
                     try (PreparedStatement checkStatement = connection.prepareStatement(sqlCheck)) {
                         checkStatement.setString(1, nomorKendaraan);
     
                         ResultSet checkResultSet = checkStatement.executeQuery();
                         if (checkResultSet.next() && checkResultSet.getInt(1) > 0) {
-                            // Tentukan kendaraan sesuai kategori pemilik
+
+                            // Tentukan kendaraan mana yang akan dihapus (berdasarkan pemilik)
                             Kendaraan kendaraan;
+
                             switch (kategoriPemilik) {
                                 case "Mahasiswa":
                                     kendaraan = new KendaraanMahasiswa(resultSet.getInt("id"), nomorKendaraan, jenisKendaraan, namaPemilik);
                                     break;
+
                                 case "Dosen":
                                     kendaraan = new KendaraanDosen(resultSet.getInt("id"), nomorKendaraan, jenisKendaraan, namaPemilik);
                                     break;
+
                                 case "Tamu":
                                     kendaraan = new KendaraanTamu(resultSet.getInt("id"), nomorKendaraan, jenisKendaraan, namaPemilik);
                                     break;
+
                                 default:
                                     showAlert("Error", "Kategori pemilik tidak valid.");
                                     return;
                             }
     
-                            // Memanggil metode untuk hapus dari database
+                            // Menghapus kendaraan dari database
                             kendaraan.hapusDariDatabase();
-                            showAlert("Sukses", "Kendaraan berhasil keluar parkir.");
+                            showAlert("Informasi", "Kendaraan telah keluar parkir.");
+                        
+                        // Jika belum ada di parkiran, tapi mau keluar
                         } else {
-                            showAlert("Kendaraan Tidak Terdaftar", "Kendaraan dengan nomor " + nomorKendaraan + " tidak terdaftar di parkir.");
+                            showAlert("Peringatan", "Kendaraan dengan nomor " + nomorKendaraan + " belum masuk parkiran.");
                         }
                     }
+
+                // Jika mau keluar, tapi belum daftar
                 } else {
-                    showAlert("Kendaraan Tidak Terdaftar", "Kendaraan dengan nomor " + nomorKendaraan + " tidak terdaftar di parkir.");
+                    showAlert("Peringatan", "Kendaraan anda belum terdaftar!.");
                 }
             }
         } catch (SQLException e) {
